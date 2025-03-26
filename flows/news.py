@@ -86,6 +86,7 @@ def controlflow_news_pipeline(
         """,
         result_type=list[str],
         name="CF - Find News Sources",
+        model="openai/gpt-4o",
     )
 
     task_scrape_content = cf.Task(
@@ -99,6 +100,7 @@ def controlflow_news_pipeline(
         tools=[fetch_url_content],
         result_type=str,
         name="CF - Scrape Article Content",
+        model="openai/gpt-4o",
     )
 
     task_organize_news = cf.Task(
@@ -116,6 +118,7 @@ def controlflow_news_pipeline(
         parents=[task_scrape_content],
         result_type=dict,
         name="CF - Summarize and Organize News",
+        model="openai/gpt-4o",
     )
 
     task_present_news = cf.Task(
@@ -135,6 +138,7 @@ def controlflow_news_pipeline(
         parents=[task_organize_news],
         result_type=str,
         name="CF - Present News Report",
+        model="openai/gpt-4o",
     )
 
     # --- Run the ControlFlow Pipeline (inside the Prefect flow) ---
