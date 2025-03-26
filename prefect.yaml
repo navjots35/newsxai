@@ -14,14 +14,15 @@ push:
 
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull:
-- prefect.deployments.steps.set_working_directory:
-    directory: /Users/personal-naavi/newsex-pipeline
+- prefect.deployments.steps.git_clone:
+    repository: https://github.com/navjots35/newsxai.git
+    branch: main
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
 - name: default
   version:
-  tags: []
+  tags: ["controlflow", "news", "llm"]
   concurrency_limit:
   description: Runs a ControlFlow.ai pipeline to extract and summarize news articles.
   entrypoint: deployment.py:news_extraction_flow
