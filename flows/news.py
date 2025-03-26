@@ -63,6 +63,8 @@ def controlflow_news_pipeline(
         openai_api_key_block = Secret.load(openai_secret_block_name)
         # Set the API key for controlflow globally for this run
         cf.settings.openai_api_key = openai_api_key_block.get()
+        # Set default model to GPT-4
+        cf.defaults.model = "openai/gpt-4o"
         logger.info(f"Loaded OpenAI API Key from Secret block '{openai_secret_block_name}'.")
     except ObjectNotFound:
          # More specific exception handling in Prefect v3+
