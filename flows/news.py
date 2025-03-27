@@ -85,17 +85,16 @@ def controlflow_news_pipeline(
         logger.info("Set Azure OpenAI environment variables from Prefect secrets")
         
         # Configure ControlFlow to use Azure OpenAI
-        cf.defaults.api_version = azure_api_version_block.get()
-        cf.defaults.model = f"azure-openai/{azure_deployment_block.get()}"
-        logger.info(f"Set ControlFlow default API version to Azure OpenAI: '{cf.defaults.api_version}'")
-        logger.info(f"Set ControlFlow default model to Azure OpenAI: '{cf.defaults.model}'")
+        # Set API version first
+        # cf.defaults.api_version = azure_api_version_block.get()
+        # Then set the model using the correct format
+        # cf.defaults.model = f"azure-openai/{azure_deployment_block.get()}"
+        # logger.info(f"Set ControlFlow default API version to Azure OpenAI: '{cf.defaults.api_version}'")
+        # logger.info(f"Set ControlFlow default model to Azure OpenAI: '{cf.defaults.model}'")
         
-        # Alternative option: configure model and API version together
-        # cf.configure(
-        #     model=f"azure-openai/{azure_deployment_block.get()}",
-        #     api_version=azure_api_version_block.get()
-        # )
-        # logger.info(f"Configured ControlFlow with Azure OpenAI model and API version")
+        # Alternative option using settings approach (as per documentation)
+        cf.settings.llm_model = f"azure-openai/{azure_deployment_block.get()}"
+        logger.info(f"Set ControlFlow settings model to Azure OpenAI: '{cf.settings.llm_model}'")
         
         # Alternative approach using direct model instantiation
         # from langchain_openai import AzureChatOpenAI
