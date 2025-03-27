@@ -47,7 +47,7 @@ def fetch_url_content(url: str) -> str:
         return f"Error: Could not process content from URL. {e}"
 
 # --- Prefect Flow Definition ---
-@flow(name="ControlFlow News Extraction Pipeline v3")
+@flow(name="newsxai-extraction")
 def controlflow_news_pipeline(
     news_topic: str = "recent advancements in AI safety research", # Updated topic example
     azure_openai_api_key_block_name: str = "azure-openai-api-key",
