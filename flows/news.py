@@ -60,19 +60,43 @@ def controlflow_news_pipeline(
 
     # --- Load OpenAI API Key from Prefect Secret ---
     try:
+        logger.info(f"Attempting to load secret block: {openai_secret_block_name}")
         openai_api_key_block = Secret.load(openai_secret_block_name)
-        # Set the API key for controlflow globally for this run
-        cf.settings.openai_api_key = openai_api_key_block.get()
-        # Set default model to GPT-4
+        api_key_value = openai_api_key_block.get()
+        logger.info(f"Successfully loaded secret block '{openai_secret_block_name}'.")
+
+        # --- Configure ControlFlow ---
+        # Option 1: Set Environment Variable (Recommended if supported)
+        # Many libraries, potentially including controlflow, check this variable.
+        os.environ["OPENAI_API_KEY"] = api_key_value
+        logger.info("Set OPENAI_API_KEY environment variable for ControlFlow.")
+
+        # Option 2: Attempt direct assignment (Original method - likely causing the error)
+        # Keep this commented out unless you confirm 'openai_api_key' is the correct attribute
+        # for your controlflow version via its documentation.
+        # try:
+        #     cf.settings.openai_api_key = api_key_value
+        #     logger.info("Successfully set cf.settings.openai_api_key.")
+        # except AttributeError as e:
+        #     logger.error(f"Failed to set cf.settings.openai_api_key: {e}. "
+        #                  f"This attribute may not exist or the method is incorrect. "
+        #                  f"Relying on environment variable.")
+        #     # If setting the environment variable is sufficient, we might not need to raise here.
+        #     # If direct setting is mandatory and failed, uncomment the raise:
+        #     # raise ValueError("Failed to configure ControlFlow API key via settings.") from e
+
+        # Set default model (assuming this part is correct)
         cf.defaults.model = "openai/gpt-4o"
-        logger.info(f"Loaded OpenAI API Key from Secret block '{openai_secret_block_name}'.")
+        logger.info(f"Set ControlFlow default model to '{cf.defaults.model}'.")
+
     except ObjectNotFound:
          # More specific exception handling in Prefect v3+
          logger.error(f"Prefect Secret block '{openai_secret_block_name}' not found. "
                       f"Please create it in the Prefect UI/API.")
          raise # Re-raise to fail the flow run clearly
     except Exception as e:
-        logger.error(f"An unexpected error occurred loading the secret: {e}")
+        # Catch other potential errors during secret loading or CF configuration
+        logger.error(f"An unexpected error occurred loading the secret or configuring ControlFlow: {e}", exc_info=True)
         raise
 
     # --- Define ControlFlow Tasks (inside the Prefect flow) ---

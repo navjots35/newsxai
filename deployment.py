@@ -47,7 +47,7 @@ if __name__ == "__main__":
             "openai_secret_block_name": "openai-api-key"
         }
     )
-    print(f"Successfully created/updated deployment: {deployment.name}")
+    print(f"Successfully created/updated deployment")
 
     # Instructions:
     # 1. Ensure the 'openai-api-key' Secret block exists in Prefect.
