@@ -8,8 +8,6 @@ from bs4 import BeautifulSoup
 
 # Prefect v3 imports (largely same as v2 for these core features)
 from prefect import flow, task, get_run_logger
-from prefect.blocks.system import Secret
-from prefect.exceptions import ObjectNotFound
 
 # --- Tool Definition (Keep as is) ---
 @cf.tool
@@ -49,8 +47,7 @@ def fetch_url_content(url: str) -> str:
 # --- Prefect Flow Definition ---
 @flow(name="ControlFlow News Extraction Pipeline v3")
 def controlflow_news_pipeline(
-    news_topic: str = "recent advancements in AI safety research", # Updated topic example
-    openai_secret_block_name: str = "openai-api-key" # Name of your Prefect Secret block
+    news_topic: str = "recent advancements in AI safety research" # Updated topic example
 ):
     """
     Orchestrates the controlflow.ai news extraction pipeline using Prefect v3.
@@ -58,21 +55,18 @@ def controlflow_news_pipeline(
     logger = get_run_logger()
     logger.info(f"Starting news extraction flow for topic: '{news_topic}'")
 
-    # --- Load OpenAI API Key from Prefect Secret ---
+    # --- Load OpenAI API Key from Environment Variable ---
     try:
-        openai_api_key_block = Secret.load(openai_secret_block_name)
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is not set")
         # Set the API key for controlflow globally for this run
-        cf.settings.openai_api_key = openai_api_key_block.get()
+        cf.settings.openai_api_key = openai_api_key
         # Set default model to GPT-4
         cf.defaults.model = "openai/gpt-4o"
-        logger.info(f"Loaded OpenAI API Key from Secret block '{openai_secret_block_name}'.")
-    except ObjectNotFound:
-         # More specific exception handling in Prefect v3+
-         logger.error(f"Prefect Secret block '{openai_secret_block_name}' not found. "
-                      f"Please create it in the Prefect UI/API.")
-         raise # Re-raise to fail the flow run clearly
+        logger.info("Loaded OpenAI API Key from environment variable.")
     except Exception as e:
-        logger.error(f"An unexpected error occurred loading the secret: {e}")
+        logger.error(f"An error occurred loading the API key: {e}")
         raise
 
     # --- Define ControlFlow Tasks (inside the Prefect flow) ---
