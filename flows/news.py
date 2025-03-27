@@ -85,28 +85,28 @@ def controlflow_news_pipeline(
         logger.info("Set Azure OpenAI environment variables from Prefect secrets")
         
         # Configure ControlFlow to use Azure OpenAI
-        # Set API version first
-        # cf.defaults.api_version = azure_api_version_block.get()
-        # Then set the model using the correct format
-        # cf.defaults.model = f"azure-openai/{azure_deployment_block.get()}"
-        # logger.info(f"Set ControlFlow default API version to Azure OpenAI: '{cf.defaults.api_version}'")
-        # logger.info(f"Set ControlFlow default model to Azure OpenAI: '{cf.defaults.model}'")
+        # Create a LangChain Azure ChatOpenAI model instance
+        from langchain_openai import AzureChatOpenAI
         
-        # Alternative option using settings approach (as per documentation)
-        cf.settings.llm_model = f"azure-openai/{azure_deployment_block.get()}"
-        logger.info(f"Set ControlFlow settings model to Azure OpenAI: '{cf.settings.llm_model}'")
+        # Properly initialize the model with required parameters
+        azure_model = AzureChatOpenAI(
+            openai_api_version=azure_api_version_block.get(),
+            azure_deployment=azure_deployment_block.get(),
+            azure_endpoint=azure_endpoint_block.get(),
+            api_key=azure_api_key_block.get()
+        )
         
-        # Alternative approach using direct model instantiation
-        # from langchain_openai import AzureChatOpenAI
-        # azure_model = AzureChatOpenAI(
-        #     openai_api_version=azure_api_version_block.get(),
-        #     azure_deployment=azure_deployment_block.get(),
-        #     azure_endpoint=azure_endpoint_block.get(),
-        #     api_key=azure_api_key_block.get()
-        # )
-        # cf.defaults.model = azure_model
-        # logger.info("Set ControlFlow default model to Azure OpenAI using AzureChatOpenAI")
-
+        # Set the model as the ControlFlow default model
+        cf.defaults.model = azure_model
+        logger.info("Set ControlFlow default model to Azure OpenAI using AzureChatOpenAI")
+        
+        # Alternative approaches:
+        # 1. Setting environment variable:
+        # os.environ["CONTROLFLOW_LLM_MODEL"] = f"azure-openai/{azure_deployment_block.get()}"
+        
+        # 2. Using the string format directly (not working due to context issues):
+        # cf.settings.llm_model = f"azure-openai/{azure_deployment_block.get()}"
+        
     except ObjectNotFound as e:
         # More specific exception to identify which secret block is missing
         logger.error(f"Prefect Secret block not found: {str(e)}")
