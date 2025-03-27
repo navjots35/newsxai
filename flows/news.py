@@ -184,9 +184,22 @@ def controlflow_news_pipeline(
     # --- Run the ControlFlow Pipeline (inside the Prefect flow) ---
     logger.info("Running the controlflow.ai task sequence...")
     try:
-        # Run the final controlflow.ai task; dependencies are handled by controlflow
-        final_report_obj = task_present_news.run() # Returns AIMessage or result_type
-
+        # Run the tasks in sequence, passing output from one to the next
+        logger.info("Step 1: Finding news sources...")
+        sources = task_find_sources.run()
+        logger.info(f"Found news sources: {sources}")
+        
+        logger.info("Step 2: Scraping article content...")
+        article_content = task_scrape_content.run(input=sources)
+        logger.info(f"Scraped ~{len(article_content) if isinstance(article_content, str) else 'unknown'} characters of content")
+        
+        logger.info("Step 3: Organizing news data...")
+        organized_news = task_organize_news.run(input=article_content)
+        logger.info(f"Organized news data: {organized_news}")
+        
+        logger.info("Step 4: Formatting final report...")
+        final_report_obj = task_present_news.run(input=organized_news) # Pass the organized news data
+        
         # Extract content for logging/returning
         if isinstance(final_report_obj, AIMessage):
             final_report = final_report_obj.content
