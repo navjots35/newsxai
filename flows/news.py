@@ -119,7 +119,6 @@ def controlflow_news_pipeline(
         Return only the raw text content obtained from the tool.
         If the tool returns an error message, return that error message.
         """,
-        parents=[task_find_sources],
         tools=[fetch_url_content],
         result_type=str,
         name="CF - Scrape Article Content",
@@ -137,7 +136,6 @@ def controlflow_news_pipeline(
         'headline' (string), 'summary' (string), and 'keywords' (list of strings).
         Example: {{"headline": "...", "summary": "...", "keywords": ["kw1", "kw2"]}}
         """,
-        parents=[task_scrape_content],
         result_type=dict,
         name="CF - Summarize and Organize News",
     )
@@ -156,7 +154,6 @@ def controlflow_news_pipeline(
         Keywords: [keyword1, keyword2, ...]
         -------------------
         """,
-        parents=[task_organize_news],
         result_type=str,
         name="CF - Present News Report",
     )
