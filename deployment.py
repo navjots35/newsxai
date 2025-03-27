@@ -11,7 +11,10 @@ from flows.news import controlflow_news_pipeline
 @flow(name="ControlFlow News Extraction Pipeline")
 def news_extraction_flow(
     news_topic: str = "recent advancements in AI safety research",
-    openai_secret_block_name: str = "openai-api-key" # Parameter for the secret block name
+    azure_openai_api_key_block_name: str = "azure-openai-api-key",
+    azure_openai_endpoint_block_name: str = "azure-openai-endpoint",
+    azure_openai_deployment_block_name: str = "azure-openai-deployment",
+    azure_openai_api_version_block_name: str = "azure-openai-api-version"
 ):
     """
     Entrypoint flow for Prefect deployments.
@@ -19,7 +22,10 @@ def news_extraction_flow(
     """
     return controlflow_news_pipeline(
         news_topic=news_topic,
-        openai_secret_block_name=openai_secret_block_name
+        azure_openai_api_key_block_name=azure_openai_api_key_block_name,
+        azure_openai_endpoint_block_name=azure_openai_endpoint_block_name,
+        azure_openai_deployment_block_name=azure_openai_deployment_block_name,
+        azure_openai_api_version_block_name=azure_openai_api_version_block_name
     )
 
 # This section now defines and creates the deployment when the script is run
@@ -38,13 +44,16 @@ if __name__ == "__main__":
         # The entrypoint is this script and the flow function defined above
         entrypoint="deployment.py:news_extraction_flow"
     ).deploy(
-        name="ControlFlow News Extraction - GitHub", # Deployment name
+        name="newsxai", # Deployment name
         work_pool_name="thebh-dev", # Specify your work pool
         tags=["controlflow", "news", "llm", "github"],
         # Define default parameters for the deployment runs
         parameters={
-            "news_topic": "recent advancements in AI safety research",
-            "openai_secret_block_name": "openai-api-key"
+            "news_topic": "recent advancements in stock market",
+            "azure_openai_api_key_block_name": "azure-openai-api-key",
+            "azure_openai_endpoint_block_name": "azure-openai-endpoint",
+            "azure_openai_deployment_block_name": "azure-openai-deployment",
+            "azure_openai_api_version_block_name": "azure-openai-api-version"
         }
     )
     print(f"Successfully created/updated deployment")
