@@ -86,7 +86,9 @@ def controlflow_news_pipeline(
         
         # Configure ControlFlow to use Azure OpenAI
         cf.defaults.model = f"azure-openai/{azure_deployment_block.get()}"
+        cf.defaults.api_version = azure_api_version_block.get()
         logger.info(f"Set ControlFlow default model to Azure OpenAI: '{cf.defaults.model}'")
+        logger.info(f"Set ControlFlow default API version to Azure OpenAI: '{cf.defaults.api_version}'")
         
         # Alternative approach using direct model instantiation
         # from langchain_openai import AzureChatOpenAI
