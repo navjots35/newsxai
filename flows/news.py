@@ -50,7 +50,10 @@ def fetch_url_content(url: str) -> str:
 @flow(name="ControlFlow News Extraction Pipeline v3")
 def controlflow_news_pipeline(
     news_topic: str = "recent advancements in AI safety research", # Updated topic example
-    openai_secret_block_name: str = "openai-api-key" # Name of your Prefect Secret block
+    azure_openai_api_key_block_name: str = "azure-openai-api-key",
+    azure_openai_endpoint_block_name: str = "azure-openai-endpoint",
+    azure_openai_deployment_block_name: str = "azure-openai-deployment",
+    azure_openai_api_version_block_name: str = "azure-openai-api-version"
 ):
     """
     Orchestrates the controlflow.ai news extraction pipeline using Prefect v3.
@@ -58,49 +61,61 @@ def controlflow_news_pipeline(
     logger = get_run_logger()
     logger.info(f"Starting news extraction flow for topic: '{news_topic}'")
 
-    # --- Load OpenAI API Key from Prefect Secret ---
+    # --- Load OpenAI API Key and Azure OpenAI credentials from Prefect Secrets ---
     try:
-        logger.info(f"Attempting to load secret block: {openai_secret_block_name}")
-        openai_api_key_block = Secret.load(openai_secret_block_name)
-        api_key_value = openai_api_key_block.get()
-        logger.info(f"Successfully loaded secret block '{openai_secret_block_name}'.")
+        logger.info(f"Attempting to load Azure OpenAI secret block: {azure_openai_api_key_block_name}")
+        logger.info(f"Attempting to load Azure OpenAI secret block: {azure_openai_endpoint_block_name}")
+        logger.info(f"Attempting to load Azure OpenAI secret block: {azure_openai_deployment_block_name}")
+        logger.info(f"Attempting to load Azure OpenAI secret block: {azure_openai_api_version_block_name}")
+        logger.info(f"Successfully loaded OpenAI secret block")
+        
+        # Load Azure OpenAI credentials from Prefect Secret blocks
+        logger.info("Loading Azure OpenAI credential secrets from Prefect blocks")
+        azure_api_key_block = Secret.load(azure_openai_api_key_block_name)
+        azure_endpoint_block = Secret.load(azure_openai_endpoint_block_name)
+        azure_deployment_block = Secret.load(azure_openai_deployment_block_name)
+        azure_api_version_block = Secret.load(azure_openai_api_version_block_name)
+        
+        # Set environment variables using secret block values
+        os.environ["AZURE_OPENAI_API_KEY"] = azure_api_key_block.get()
+        os.environ["AZURE_OPENAI_ENDPOINT"] = azure_endpoint_block.get()
+        os.environ["AZURE_OPENAI_DEPLOYMENT"] = azure_deployment_block.get()
+        os.environ["AZURE_OPENAI_API_VERSION"] = azure_api_version_block.get()
+        
+        logger.info("Set Azure OpenAI environment variables from Prefect secrets")
+        
+        # Configure ControlFlow to use Azure OpenAI
+        cf.defaults.model = f"azure-openai/{azure_deployment_block.get()}"
+        logger.info(f"Set ControlFlow default model to Azure OpenAI: '{cf.defaults.model}'")
+        
+        # Alternative approach using direct model instantiation
+        # from langchain_openai import AzureChatOpenAI
+        # azure_model = AzureChatOpenAI(
+        #     openai_api_version=azure_api_version_block.get(),
+        #     azure_deployment=azure_deployment_block.get(),
+        #     azure_endpoint=azure_endpoint_block.get(),
+        #     api_key=azure_api_key_block.get()
+        # )
+        # cf.defaults.model = azure_model
+        # logger.info("Set ControlFlow default model to Azure OpenAI using AzureChatOpenAI")
 
-        # --- Configure ControlFlow ---
-        # Option 1: Set Environment Variable (Recommended if supported)
-        # Many libraries, potentially including controlflow, check this variable.
-        os.environ["OPENAI_API_KEY"] = api_key_value
-        logger.info("Set OPENAI_API_KEY environment variable for ControlFlow.")
-
-        # Option 2: Attempt direct assignment (Original method - likely causing the error)
-        # Keep this commented out unless you confirm 'openai_api_key' is the correct attribute
-        # for your controlflow version via its documentation.
-        # try:
-        #     cf.settings.openai_api_key = api_key_value
-        #     logger.info("Successfully set cf.settings.openai_api_key.")
-        # except AttributeError as e:
-        #     logger.error(f"Failed to set cf.settings.openai_api_key: {e}. "
-        #                  f"This attribute may not exist or the method is incorrect. "
-        #                  f"Relying on environment variable.")
-        #     # If setting the environment variable is sufficient, we might not need to raise here.
-        #     # If direct setting is mandatory and failed, uncomment the raise:
-        #     # raise ValueError("Failed to configure ControlFlow API key via settings.") from e
-
-        # Set default model (assuming this part is correct)
-        cf.defaults.model = "openai/gpt-4o"
-        logger.info(f"Set ControlFlow default model to '{cf.defaults.model}'.")
-
-    except ObjectNotFound:
-         # More specific exception handling in Prefect v3+
-         logger.error(f"Prefect Secret block '{openai_secret_block_name}' not found. "
-                      f"Please create it in the Prefect UI/API.")
-         raise # Re-raise to fail the flow run clearly
+    except ObjectNotFound as e:
+        # More specific exception to identify which secret block is missing
+        logger.error(f"Prefect Secret block not found: {str(e)}")
+        logger.error("Please create the following secret blocks in Prefect UI/API:")
+        logger.error("  - azure-openai-api-key")
+        logger.error("  - azure-openai-endpoint")
+        logger.error("  - azure-openai-deployment")
+        logger.error("  - azure-openai-api-version")
+        raise
     except Exception as e:
-        # Catch other potential errors during secret loading or CF configuration
-        logger.error(f"An unexpected error occurred loading the secret or configuring ControlFlow: {e}", exc_info=True)
+        logger.error(f"An unexpected error occurred loading secrets or configuring ControlFlow: {e}", exc_info=True)
         raise
 
     # --- Define ControlFlow Tasks (inside the Prefect flow) ---
     # These are controlflow.ai tasks, not Prefect tasks
+    # Note: We don't need to specify model parameter for individual tasks
+    # as they will use the default model configured above
     task_find_sources = cf.Task(
         objective=f"""
         Identify 2-3 recent and reputable news article URLs specifically about '{news_topic}'.
